@@ -94,7 +94,7 @@ def generate_response_content_type_validator(produces, **kwargs):
     )
 
 
-def generate_path_parameters_validator(api_path, path_parameters, context, **kwargs):
+def generate_parameters_validator(api_path, path_definition, context, **kwargs):
     path_parameter_validator = functools.partial(
         validate_path_parameters,
         api_path=api_path,
@@ -109,7 +109,7 @@ def generate_path_parameters_validator(api_path, path_parameters, context, **kwa
 
 
 validator_mapping = {
-    'path': generate_path_parameters_validator,
+    'parameters': generate_parameters_validator,
     'produces': generate_response_content_type_validator,
     'schema': generate_response_body_validator,
     'headers': generate_response_header_validator,
