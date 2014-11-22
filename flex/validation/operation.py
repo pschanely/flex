@@ -61,16 +61,6 @@ def generate_request_content_type_validator(consumes, **kwargs):
     )
 
 
-def validate_request_parameters(request, validators):
-    with ErrorCollection(inner=True) as errors:
-
-        for key, fn in validators.items():
-            try:
-                fn(request)
-            except ValidationError as err:
-                errors[key].extend(list(err.messages))
-
-
 def generate_path_parameters_validator(api_path, path_parameters, context):
     path_parameter_validator = functools.partial(
         validate_path_parameters,
@@ -121,7 +111,8 @@ def generate_header_validator(headers, context, **kwargs):
     )
 
 
-def generate_parameters_validator(api_path, path_definition, parameters, context, **kwargs):
+def generate_parameters_validator(api_path, path_definition, parameters,
+                                  context, inner=False, **kwargs):
     """
     Generates a validator function to validate.
 
@@ -154,7 +145,7 @@ def generate_parameters_validator(api_path, path_definition, parameters, context
     in_header_parameters = filter_parameters(all_parameters, in_=HEADER)
     validators['headers'] = generate_header_validator(in_header_parameters, context)
 
-    return functools.partial(validate_request_parameters, validators=validators)
+    return functools.partial(validate_object, validators=validators, inner=inner)
 
 
 validator_mapping = {
@@ -189,6 +180,7 @@ def construct_operation_validators(api_path, path_definition, operation_definiti
             context=context,
             api_path=api_path,
             path_definition=path_definition,
+            inner=True,
             **operation_definition
         )
 

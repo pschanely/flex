@@ -18,7 +18,10 @@ def test_produces_validation_valid_mimetype_from_global_definition():
     Test that a response content_type that is in the global api produces
     definitions is valid.
     """
-    response = ResponseFactory(content_type='application/json')
+    response = ResponseFactory(
+        content_type='application/json',
+        url='http://www.example.com/get',
+    )
 
     schema = SchemaFactory(
         produces=['application/json'],
@@ -41,7 +44,10 @@ def test_produces_validation_invalid_mimetype_from_global_definition():
     """
     from django.core.exceptions import ValidationError
 
-    response = ResponseFactory(content_type='application/json')
+    response = ResponseFactory(
+        content_type='application/json',
+        url='http://www.example.com/get',
+    )
 
     schema = SchemaFactory(
         produces=['application/xml'],
@@ -64,7 +70,10 @@ def test_produces_validation_for_valid_mimetype_from_operation_definition():
     Test that when `produces` is defined in an operation definition, that the
     local value is used in place of any global `produces` definition.
     """
-    response = ResponseFactory(content_type='application/json')
+    response = ResponseFactory(
+        content_type='application/json',
+        url='http://www.example.com/get',
+    )
 
     schema = SchemaFactory(
         produces=['application/xml'],
@@ -89,7 +98,10 @@ def test_produces_validation_for_invalid_mimetype_from_operation_definition():
     allowed mimetypes, that that the local value is used for validation.
     """
     from django.core.exceptions import ValidationError
-    response = ResponseFactory(content_type='application/xml')
+    response = ResponseFactory(
+        content_type='application/xml',
+        url='http://www.example.com/get',
+    )
 
     schema = SchemaFactory(
         produces=['application/xml'],
