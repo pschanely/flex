@@ -92,6 +92,11 @@ PATH_MESSAGES = {
 }
 
 
+UNKNOWN_REFERENCE_MESSAGES = {
+    'parameter': "Unknown parameter reference `{0}`",
+}
+
+
 MESSAGES = {
     'type': TYPE_MESSAGES,
     'format': FORMAT_MESSAGES,
@@ -109,4 +114,5 @@ MESSAGES = {
     'request': REQUEST_MESSAGES,
     'response': RESPONSE_MESSAGES,
     'path': PATH_MESSAGES,
+    'unknown_reference': UNKNOWN_REFERENCE_MESSAGES,
 }

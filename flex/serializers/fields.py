@@ -1,15 +1,24 @@
 from rest_framework import serializers
 
+from flex.compat.fields import (
+    WritableField,
+    CharField,
+)
 from flex.exceptions import ValidationError
 from flex.utils import is_non_string_iterable
 from flex.serializers.mixins import TranslateValidationErrorMixin
 
 
-class MaybeListCharField(TranslateValidationErrorMixin, serializers.CharField):
-    def from_native(self, value):
+class MaybeListCharField(TranslateValidationErrorMixin, CharField):
+    def to_internal_value(self, value):
         if is_non_string_iterable(value):
             return value
-        return super(MaybeListCharField, self).from_native(value)
+        return super(MaybeListCharField, self).to_internal_value(value)
+
+
+class DefaultValueField(WritableField):
+    def to_internal_value(self, value):
+        return value
 
 
 class SecurityRequirementReferenceField(serializers.CharField):

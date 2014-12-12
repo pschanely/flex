@@ -80,7 +80,7 @@ def parse(raw_schema):
         message += prettify_errors(definitions_serializer.errors)
         raise ValueError(message)
 
-    swagger_definitions = definitions_serializer.object
+    swagger_definitions = definitions_serializer.validated_data
 
     swagger_serializer = SwaggerSerializer(
         swagger_definitions,
@@ -93,7 +93,7 @@ def parse(raw_schema):
         message += prettify_errors(swagger_serializer.errors)
         raise ValueError(message)
 
-    return swagger_serializer.object
+    return swagger_serializer.validated_data
 
 
 def load(target):

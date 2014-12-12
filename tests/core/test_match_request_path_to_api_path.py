@@ -61,7 +61,7 @@ def test_path_to_pattern_with_single_parameter():
         many=True
     )
     assert serializer.is_valid(), serializer.errors
-    parameters = serializer.object
+    parameters = serializer.validated_data
     actual = path_to_pattern(input_, parameters=parameters)
 
     assert actual == expected
@@ -79,7 +79,7 @@ def test_path_to_pattern_with_multiple_parameters():
         many=True
     )
     assert serializer.is_valid(), serializer.errors
-    parameters = serializer.object
+    parameters = serializer.validated_data
     actual = path_to_pattern(input_, parameters=parameters)
 
     assert actual == expected

@@ -2,7 +2,13 @@ import six
 
 from rest_framework import serializers
 
-from flex.compat.serializers import add_field_to_serializer
+from flex.compat.fields import (
+    CharField,
+)
+from flex.compat.serializers import (
+    add_field_to_serializer,
+    DRFSerializerShim,
+)
 from flex.exceptions import (
     ValidationError,
     ErrorDict,
@@ -77,23 +83,23 @@ class ItemsSerializer(BaseItemsSerializer):
 add_field_to_serializer(
     SchemaSerializer,
     'properties',
-    PropertiesSerializer(required=False),
+    PropertiesSerializer(allow_null=True, required=False),
 )
 add_field_to_serializer(
     SchemaSerializer,
     'items',
-    ItemsSerializer(required=False, many=True),
+    ItemsSerializer(allow_null=True, required=False, many=True),
 )
 add_field_to_serializer(
     SchemaSerializer,
     'allOf',
-    SchemaSerializer(required=False, many=True),
+    SchemaSerializer(allow_null=True, required=False, many=True),
 )
 
 
 class HeaderSerializer(BaseHeaderSerializer):
-    items = ItemsSerializer(required=False, many=True)
-    schema = SchemaSerializer(required=False)
+    items = ItemsSerializer(allow_null=True, required=False, many=True)
+    schema = SchemaSerializer(allow_null=True, required=False)
 
 
 class HeadersSerializer(HomogenousDictSerializer):
@@ -104,8 +110,8 @@ class HeadersSerializer(HomogenousDictSerializer):
 
 
 class ParameterSerializer(BaseParameterSerializer):
-    schema = SchemaSerializer(required=False)
-    items = ItemsSerializer(required=False, many=True)
+    schema = SchemaSerializer(allow_null=True, required=False)
+    items = ItemsSerializer(allow_null=True, required=False, many=True)
 
 
 class ParameterDefinitionsSerializer(HomogenousDictSerializer):
@@ -116,7 +122,7 @@ class ScopesSerializer(HomogenousDictSerializer):
     value_serializer_class = serializers.CharField
 
 
-class SecuritySchemeSerializer(serializers.Serializer):
+class SecuritySchemeSerializer(DRFSerializerShim, serializers.Serializer):
     """
     https://github.com/wordnik/swagger-spec/blob/master/versions/2.0.md#securityDefinitionsObject
     """
@@ -134,16 +140,16 @@ class SecuritySchemeSerializer(serializers.Serializer):
         ),
     }
     type = serializers.CharField(validators=[security_type_validator])
-    description = serializers.CharField(required=False)
-    name = serializers.CharField(required=False)
-    flow = serializers.CharField(
-        required=False, validators=[security_flow_validator],
+    description = CharField(allow_null=True, required=False)
+    name = CharField(allow_null=True, required=False)
+    flow = CharField(
+        allow_null=True, required=False, validators=[security_flow_validator],
     )
     # TODO: support SHOULD clauses about these being in the form of a url.
-    authorizationUrl = serializers.CharField(required=False)
-    tokenUrl = serializers.CharField(required=False)
+    authorizationUrl = CharField(allow_null=True, required=False)
+    tokenUrl = CharField(allow_null=True, required=False)
 
-    scopes = ScopesSerializer(required=False)
+    scopes = ScopesSerializer(allow_null=True, required=False)
 
     def validate(self, attrs):
         errors = ErrorDict()
@@ -182,8 +188,8 @@ class SecuritySchemeSerializer(serializers.Serializer):
 add_field_to_serializer(
     SecuritySchemeSerializer,
     'in',
-    serializers.CharField(
-        required=False,
+    CharField(
+        allow_null=True, required=False,
         validators=[security_api_key_location_validator],
     ),
 )
@@ -197,8 +203,8 @@ class ResponseSerializer(BaseResponseSerializer):
     """
     https://github.com/wordnik/swagger-spec/blob/master/versions/2.0.md#responseObject
     """
-    schema = SchemaSerializer(required=False)
-    headers = HeadersSerializer(required=False)
+    schema = SchemaSerializer(allow_null=True, required=False)
+    headers = HeadersSerializer(allow_null=True, required=False)
     # example  # TODO: how do we do example.
 
 
@@ -206,7 +212,7 @@ class ResponseDefinitionsSerializer(HomogenousDictSerializer):
     value_serializer_class = ResponseSerializer
 
 
-class SwaggerDefinitionsSerializer(serializers.Serializer):
+class SwaggerDefinitionsSerializer(DRFSerializerShim, serializers.Serializer):
     """
     Step 1 in the schema validation process is to gather all of the
     definitions.
@@ -217,10 +223,10 @@ class SwaggerDefinitionsSerializer(serializers.Serializer):
         kwargs['context'] = context
         super(SwaggerDefinitionsSerializer, self).__init__(*args, **kwargs)
 
-    definitions = DefinitionsSerializer(required=False)
-    parameters = ParameterDefinitionsSerializer(required=False)
-    securityDefinitions = SecurityDefinitionsSerializer(required=False)
-    responses = ResponseDefinitionsSerializer(required=False)
+    definitions = DefinitionsSerializer(allow_null=True, required=False)
+    parameters = ParameterDefinitionsSerializer(allow_null=True, required=False)
+    securityDefinitions = SecurityDefinitionsSerializer(allow_null=True, required=False)
+    responses = ResponseDefinitionsSerializer(allow_null=True, required=False)
 
     def validate(self, attrs):
         deferred_references = self.context['deferred_references']

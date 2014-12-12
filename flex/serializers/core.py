@@ -5,8 +5,15 @@ import six
 
 from rest_framework import serializers
 
-from flex.compat.fields import ListField
-from flex.compat.serializers import add_field_to_serializer
+from flex.compat.fields import (
+    ListField,
+    CharField,
+    NullBooleanField,
+)
+from flex.compat.serializers import (
+    add_field_to_serializer,
+    DRFSerializerShim,
+)
 from flex.exceptions import (
     ValidationError,
     ErrorDict,
@@ -56,11 +63,11 @@ class InfoSerializer(serializers.Serializer):
     https://github.com/wordnik/swagger-spec/blob/master/versions/2.0.md#infoObject
     """
     title = serializers.CharField()
-    description = serializers.CharField(required=False)
-    termsOfService = serializers.CharField(required=False)
-    contact = serializers.CharField(required=False)
-    license = serializers.CharField(required=False)
-    version = serializers.CharField(required=False)
+    description = CharField(allow_null=True, required=False)
+    termsOfService = CharField(allow_null=True, required=False)
+    contact = CharField(allow_null=True, required=False)
+    license = CharField(allow_null=True, required=False)
+    version = CharField(allow_null=True, required=False)
 
 
 class ItemsSerializer(BaseItemsSerializer):
@@ -80,7 +87,7 @@ class ItemsSerializer(BaseItemsSerializer):
 
 
 class HeaderSerializer(BaseHeaderSerializer):
-    items = ItemsSerializer(required=False, many=True)
+    items = ItemsSerializer(allow_null=True, required=False, many=True)
 
 
 class HeadersSerializer(HomogenousDictSerializer):
@@ -118,8 +125,8 @@ class ResponseSerializer(BaseResponseSerializer):
     """
     https://github.com/wordnik/swagger-spec/blob/master/versions/2.0.md#responseObject
     """
-    schema = SchemaSerializer(required=False)
-    headers = HeadersSerializer(required=False)
+    schema = SchemaSerializer(allow_null=True, required=False)
+    headers = HeadersSerializer(allow_null=True, required=False)
     # TODO: how do we do examples
     # examples =
 
@@ -133,12 +140,8 @@ class SecuritySerializer(HomogenousDictSerializer):
 
 
 class ParameterSerializer(BaseParameterSerializer):
-    default_error_messages = {
-        'unknown_reference': "Unknown reference `{0}`",
-    }
-
-    schema = SchemaSerializer(required=False)
-    items = ItemsSerializer(required=False, many=True)
+    schema = SchemaSerializer(allow_null=True, required=False)
+    items = ItemsSerializer(allow_null=True, required=False, many=True)
 
     @property
     def many(self):
@@ -148,12 +151,12 @@ class ParameterSerializer(BaseParameterSerializer):
     def many(self, value):
         pass
 
-    def from_native(self, data, files=None):
+    def to_internal_value(self, data, files=None):
         if isinstance(data, six.string_types):
             try:
                 self.validate_reference(data)
             except ValidationError as err:
-                assert not self._errors
+                assert not getattr(self, '_errors', False)
                 self._errors = {}
                 self._errors['non_field_errors'] = self._errors.get(
                     'non_field_errors', [],
@@ -166,41 +169,41 @@ class ParameterSerializer(BaseParameterSerializer):
     def validate_reference(self, reference):
         if reference not in self.context.get('parameters', {}):
             raise ValidationError(
-                self.error_messages['unknown_reference'].format(reference),
+                MESSAGES['unknown_reference']['parameter'].format(reference),
             )
 
 
-class OperationSerializer(serializers.Serializer):
+class OperationSerializer(DRFSerializerShim, serializers.Serializer):
     """
     https://github.com/wordnik/swagger-spec/blob/master/versions/2.0.md#operationObject
     """
     tags = ListField(
-        required=False,
+        allow_null=True, required=False,
         child=serializers.CharField(validators=[string_type_validator]),
     )
-    summary = serializers.CharField(required=False)
-    description = serializers.CharField(required=False)
-    externalDocs = serializers.CharField(required=False)
-    operationId = serializers.CharField(required=False)
+    summary = CharField(allow_null=True, required=False)
+    description = CharField(allow_null=True, required=False)
+    externalDocs = CharField(allow_null=True, required=False)
+    operationId = CharField(allow_null=True, required=False)
     consumes = ListField(
-        required=False,
+        allow_null=True, required=False,
         child=serializers.CharField(validators=[mimetype_validator]),
     )
     produces = ListField(
-        required=False,
+        allow_null=True, required=False,
         child=serializers.CharField(validators=[mimetype_validator]),
     )
-    parameters = ParameterSerializer(required=False, many=True)
+    parameters = ParameterSerializer(allow_null=True, required=False, many=True)
     responses = ResponsesSerializer()
     schemes = ListField(
-        required=False,
+        allow_null=True, required=False,
         child=serializers.CharField(validators=[scheme_validator]),
     )
-    deprecated = serializers.BooleanField(required=False)
-    security = SecuritySerializer(required=False)
+    deprecated = NullBooleanField(required=False)
+    security = SecuritySerializer(allow_null=True, required=False)
 
 
-class PathItemSerializer(serializers.Serializer):
+class PathItemSerializer(DRFSerializerShim, serializers.Serializer):
     """
     https://github.com/wordnik/swagger-spec/blob/master/versions/2.0.md#pathsObject
     """
@@ -208,24 +211,24 @@ class PathItemSerializer(serializers.Serializer):
     # TODO. how is this supposted to work.  The swagger spec doesn't account
     # for a definitions location for PathItem definitions?
     # _ref = serializers.CharField(source='$ref')
-    get = OperationSerializer(required=False)
-    put = OperationSerializer(required=False)
-    post = OperationSerializer(required=False)
-    delete = OperationSerializer(required=False)
-    options = OperationSerializer(required=False)
-    head = OperationSerializer(required=False)
-    patch = OperationSerializer(required=False)
+    get = OperationSerializer(allow_null=True, required=False)
+    put = OperationSerializer(allow_null=True, required=False)
+    post = OperationSerializer(allow_null=True, required=False)
+    delete = OperationSerializer(allow_null=True, required=False)
+    options = OperationSerializer(allow_null=True, required=False)
+    head = OperationSerializer(allow_null=True, required=False)
+    patch = OperationSerializer(allow_null=True, required=False)
     # TODO: these can be a parameters reference object.
-    parameters = ParameterSerializer(required=False, many=True)
+    parameters = ParameterSerializer(allow_null=True, required=False, many=True)
 
 
-class TagSerializer(serializers.Serializer):
+class TagSerializer(DRFSerializerShim, serializers.Serializer):
     """
     https://github.com/wordnik/swagger-spec/blob/master/versions/2.0.md#tagObject
     """
     name = serializers.CharField()
-    description = serializers.CharField(required=False)
-    externalDocs = serializers.CharField(required=False)
+    description = CharField(allow_null=True, required=False)
+    externalDocs = CharField(allow_null=True, required=False)
 
 
 class PropertiesSerializer(HomogenousDictSerializer):
@@ -237,22 +240,23 @@ class PropertiesSerializer(HomogenousDictSerializer):
 add_field_to_serializer(
     SchemaSerializer,
     'properties',
-    PropertiesSerializer(required=False),
+    PropertiesSerializer(allow_null=True, required=False),
 )
 add_field_to_serializer(
     SchemaSerializer,
     'items',
-    ItemsSerializer(required=False, many=True),
+    ItemsSerializer(allow_null=True, required=False, many=True),
 )
 add_field_to_serializer(
     SchemaSerializer,
     'allOf',
-    SchemaSerializer(required=False, many=True),
+    SchemaSerializer(allow_null=True, required=False, many=True),
 )
 
 
 class PathsSerializer(HomogenousDictSerializer):
     value_serializer_class = PathItemSerializer
+    value_serializer_kwargs = {'allow_null': True}
     allow_empty = True
 
     def validate(self, attrs):
@@ -313,7 +317,7 @@ class PathsSerializer(HomogenousDictSerializer):
         return super(PathsSerializer, self).validate(attrs)
 
 
-class SwaggerSerializer(serializers.Serializer):
+class SwaggerSerializer(DRFSerializerShim, serializers.Serializer):
     """
     Primary Serializer for swagger schema
     """
@@ -323,30 +327,30 @@ class SwaggerSerializer(serializers.Serializer):
         ],
     )
     info = InfoSerializer()
-    host = serializers.CharField(
-        required=False,
+    host = CharField(
+        allow_null=True, required=False,
         validators=[host_validator],
     )
-    basePath = serializers.CharField(
-        required=False,
+    basePath = CharField(
+        allow_null=True, required=False,
         validators=[path_validator],
     )
     schemes = ListField(
-        required=False,
+        allow_null=True, required=False,
         child=serializers.CharField(validators=[scheme_validator]),
     )
     consumes = ListField(
-        required=False,
+        allow_null=True, required=False,
         child=serializers.CharField(validators=[mimetype_validator]),
     )
     produces = ListField(
-        required=False,
+        allow_null=True, required=False,
         child=serializers.CharField(validators=[mimetype_validator]),
     )
 
     paths = PathsSerializer()
 
-    security = SecuritySerializer(required=False)
+    security = SecuritySerializer(allow_null=True, required=False)
 
-    tags = TagSerializer(required=False, many=True)
-    externalDocs = serializers.CharField(required=False)
+    tags = TagSerializer(allow_null=True, required=False, many=True)
+    externalDocs = CharField(allow_null=True, required=False)

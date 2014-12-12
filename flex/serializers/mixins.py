@@ -1,3 +1,7 @@
+import six
+
+from flex.compat.fields import empty
+from flex.exceptions import ValidationError
 from flex.utils import is_value_of_type
 from flex.decorators import (
     translate_validation_error,
@@ -31,3 +35,13 @@ class TranslateValidationErrorMixin(object):
         return super(TranslateValidationErrorMixin, self).validate(
             *args, **kwargs
         )
+
+
+class AllowStringReferenceMixin(object):
+    def run_validation(self, data=empty):
+        if isinstance(data, six.string_types):
+            value = self.to_internal_value(data)
+            if getattr(self, '_errors', False):
+                raise ValidationError(self._errors)
+            return value
+        return super(AllowStringReferenceMixin, self).run_validation(data)

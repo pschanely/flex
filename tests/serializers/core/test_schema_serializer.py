@@ -185,6 +185,7 @@ def test_items_as_array_of_valid_references():
             },
         },
     )
+    serializer.is_valid()
     assert 'items' not in serializer.errors
 
 
@@ -208,5 +209,6 @@ def test_items_with_mixed_array_of_references_and_schemas():
         data=schema,
         context={'definitions': {'SomeReference': {}}}
     )
+    serializer.is_valid()
 
     assert 'items' not in serializer.errors
