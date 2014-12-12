@@ -1,9 +1,8 @@
-import collections
-
 import six
 
 from rest_framework import serializers
 
+from flex.compat.serializers import add_field_to_serializer
 from flex.exceptions import (
     ValidationError,
     ErrorDict,
@@ -75,9 +74,21 @@ class ItemsSerializer(BaseItemsSerializer):
 
 # These fields include recursive use of the `SchemaSerializer` so they have to
 # be attached after the `SchemaSerializer` class has been created.
-SchemaSerializer.base_fields['properties'] = PropertiesSerializer(required=False)
-SchemaSerializer.base_fields['items'] = ItemsSerializer(required=False, many=True)
-SchemaSerializer.base_fields['allOf'] = SchemaSerializer(required=False, many=True)
+add_field_to_serializer(
+    SchemaSerializer,
+    'properties',
+    PropertiesSerializer(required=False),
+)
+add_field_to_serializer(
+    SchemaSerializer,
+    'items',
+    ItemsSerializer(required=False, many=True),
+)
+add_field_to_serializer(
+    SchemaSerializer,
+    'allOf',
+    SchemaSerializer(required=False, many=True),
+)
 
 
 class HeaderSerializer(BaseHeaderSerializer):
@@ -168,9 +179,13 @@ class SecuritySchemeSerializer(serializers.Serializer):
         return super(SecuritySchemeSerializer, self).validate(attrs)
 
 
-SecuritySchemeSerializer.base_fields['in'] = serializers.CharField(
-    required=False,
-    validators=[security_api_key_location_validator],
+add_field_to_serializer(
+    SecuritySchemeSerializer,
+    'in',
+    serializers.CharField(
+        required=False,
+        validators=[security_api_key_location_validator],
+    ),
 )
 
 

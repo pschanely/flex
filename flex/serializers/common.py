@@ -7,6 +7,8 @@ from django.core.validators import (
 
 from rest_framework import serializers
 
+from flex.compat.fields import WritableField
+from flex.compat.serializers import add_field_to_serializer
 from flex.exceptions import (
     ValidationError,
     ErrorDict,
@@ -137,7 +139,7 @@ class CommonJSONSchemaSerializer(serializers.Serializer):
     minItems = serializers.IntegerField(required=False)
     uniqueItems = serializers.BooleanField(required=False)
 
-    enum = serializers.WritableField(required=False, validators=[is_array_validator])
+    enum = WritableField(required=False, validators=[is_array_validator])
 
     def check_type_for_attr(self, attrs, field_name, types, errors, error_key):
         """
@@ -265,7 +267,7 @@ class BaseSchemaSerializer(CommonJSONSchemaSerializer):
 
     format = serializers.CharField(validators=[format_validator], required=False)
     title = serializers.CharField(required=False)
-    default = serializers.WritableField(required=False)
+    default = WritableField(required=False)
 
     minProperties = serializers.IntegerField(
         required=False, validators=[MinValueValidator(0)]
@@ -311,7 +313,11 @@ class BaseSchemaSerializer(CommonJSONSchemaSerializer):
             raise ValidationError(errors)
         return super(BaseSchemaSerializer, self).validate(attrs)
 
-BaseSchemaSerializer.base_fields['$ref'] = serializers.CharField(required=False)
+add_field_to_serializer(
+    BaseSchemaSerializer,
+    '$ref',
+    serializers.CharField(required=False),
+)
 
 
 class BaseItemsSerializer(BaseSchemaSerializer):
@@ -369,7 +375,7 @@ class BaseParameterSerializer(TypedDefaultMixin, CommonJSONSchemaSerializer):
     collectionFormat = serializers.CharField(
         required=False, validators=[collection_format_validator], default=CSV,
     )
-    default = serializers.WritableField(required=False)
+    default = WritableField(required=False)
 
     def validate(self, attrs):
         errors = ErrorDict()
@@ -420,7 +426,7 @@ class BaseHeaderSerializer(TypedDefaultMixin, CommonJSONSchemaSerializer):
     collectionFormat = serializers.CharField(
         required=False, validators=[collection_format_validator], default=CSV,
     )
-    default = serializers.WritableField(required=False)
+    default = WritableField(required=False)
 
     def validate(self, attrs):
         errors = ErrorDict()
@@ -437,6 +443,8 @@ class BaseHeaderSerializer(TypedDefaultMixin, CommonJSONSchemaSerializer):
 
 
 # Cannot declare this as a property on the class because `in` is a reserved word.
-BaseParameterSerializer.base_fields['in'] = serializers.CharField(
-    source='in', validators=[parameter_in_validator],
+add_field_to_serializer(
+    BaseParameterSerializer,
+    'in',
+    serializers.CharField(source='in', validators=[parameter_in_validator])
 )

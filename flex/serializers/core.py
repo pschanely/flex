@@ -5,8 +5,8 @@ import six
 
 from rest_framework import serializers
 
-from drf_compound_fields.fields import ListField
-
+from flex.compat.fields import ListField
+from flex.compat.serializers import add_field_to_serializer
 from flex.exceptions import (
     ValidationError,
     ErrorDict,
@@ -174,16 +174,28 @@ class OperationSerializer(serializers.Serializer):
     """
     https://github.com/wordnik/swagger-spec/blob/master/versions/2.0.md#operationObject
     """
-    tags = ListField(required=False, validators=[string_type_validator])
+    tags = ListField(
+        required=False,
+        child=serializers.CharField(validators=[string_type_validator]),
+    )
     summary = serializers.CharField(required=False)
     description = serializers.CharField(required=False)
     externalDocs = serializers.CharField(required=False)
     operationId = serializers.CharField(required=False)
-    consumes = ListField(required=False, validators=[mimetype_validator])
-    produces = ListField(required=False, validators=[mimetype_validator])
+    consumes = ListField(
+        required=False,
+        child=serializers.CharField(validators=[mimetype_validator]),
+    )
+    produces = ListField(
+        required=False,
+        child=serializers.CharField(validators=[mimetype_validator]),
+    )
     parameters = ParameterSerializer(required=False, many=True)
     responses = ResponsesSerializer()
-    schemes = ListField(required=False, validators=[scheme_validator])
+    schemes = ListField(
+        required=False,
+        child=serializers.CharField(validators=[scheme_validator]),
+    )
     deprecated = serializers.BooleanField(required=False)
     security = SecuritySerializer(required=False)
 
@@ -222,9 +234,21 @@ class PropertiesSerializer(HomogenousDictSerializer):
 
 # These fields include recursive use of the `SchemaSerializer` so they have to
 # be attached after the `SchemaSerializer` class has been created.
-SchemaSerializer.base_fields['properties'] = PropertiesSerializer(required=False)
-SchemaSerializer.base_fields['items'] = ItemsSerializer(required=False, many=True)
-SchemaSerializer.base_fields['allOf'] = SchemaSerializer(required=False, many=True)
+add_field_to_serializer(
+    SchemaSerializer,
+    'properties',
+    PropertiesSerializer(required=False),
+)
+add_field_to_serializer(
+    SchemaSerializer,
+    'items',
+    ItemsSerializer(required=False, many=True),
+)
+add_field_to_serializer(
+    SchemaSerializer,
+    'allOf',
+    SchemaSerializer(required=False, many=True),
+)
 
 
 class PathsSerializer(HomogenousDictSerializer):
@@ -307,9 +331,18 @@ class SwaggerSerializer(serializers.Serializer):
         required=False,
         validators=[path_validator],
     )
-    schemes = ListField(required=False, validators=[scheme_validator])
-    consumes = ListField(required=False, validators=[mimetype_validator])
-    produces = ListField(required=False, validators=[mimetype_validator])
+    schemes = ListField(
+        required=False,
+        child=serializers.CharField(validators=[scheme_validator]),
+    )
+    consumes = ListField(
+        required=False,
+        child=serializers.CharField(validators=[mimetype_validator]),
+    )
+    produces = ListField(
+        required=False,
+        child=serializers.CharField(validators=[mimetype_validator]),
+    )
 
     paths = PathsSerializer()
 
